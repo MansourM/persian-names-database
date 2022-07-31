@@ -7,6 +7,8 @@ $time_start = microtime(true);
 $db = Db::getInstance();
 $db->createTable();
 
+$data = [];
+$createPopularNamesJson = true;
 $i = 0;
 $c = 0;
 $chunk_size = 500;
@@ -19,8 +21,9 @@ echo "=-=-= Reading Names =-=-=\n";
 while (($line = fgetcsv($file)) !== FALSE) {
     if ($i++ == 0)
         continue;
-    echoLine($i - 1, $line);
-    $query .= $db->getQuery($line[0], $line[1] == 1 ? '1' : '0', $line[2] == 1 ? '1' : '0', getRarityLevelId($line[3]));
+    $line[3] = getRarityLevelId($line[3]);
+    $data = process($i - 1, $line, $data, $createPopularNamesJson);
+    $query .= $db->getQuery($line[0], $line[1] == 1 ? '1' : '0', $line[2] == 1 ? '1' : '0', $line[3]);
     $c++;
     if ($c == $chunk_size) {
         echo "\n\n=-=-= Executing Chunk, size = $c =-=-=\n\n";
@@ -40,6 +43,9 @@ fclose($file);
 
 $time_end = microtime(true);
 $execution_time = ($time_end - $time_start);
+
+if ($createPopularNamesJson)
+    file_put_contents('popular_names.json', json_encode($data));
 
 echo "=-=-= Done! =-=-=\n";
 echo "Time: $execution_time seconds\n";
